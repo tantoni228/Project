@@ -1,0 +1,4 @@
+def smail():
+    print(' * * ')
+    print('  __  ')
+smail()
