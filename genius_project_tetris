@@ -1,212 +1,173 @@
 import pygame
-import os
-import sys
+import random
 
-class Tile(pygame.sprite.Sprite):
-    def __init__(self, tile_type, pos_x, pos_y):
-        super().__init__(tiles_group, all_sprites)
-        self.image = tile_images[tile_type]
-        self.rect = self.image.get_rect().move(
-            tile_width * pos_x, tile_height * pos_y)
+def get_color():
+    return random.randrange(0, 255), random.randrange(0, 255), random.randrange(0, 255)
 
 
-class Player(pygame.sprite.Sprite):
-    def __init__(self, pos_x, pos_y):
-        super().__init__(player_group, all_sprites)
-        self.image = player_image
-        self.x = pos_x
-        self.y = pos_y
-        self.rect = self.image.get_rect().move(
-            tile_width * self.x + 15, tile_height * self.y + 5)
 
-    def get_cordinates(self):
-        return self.x, self.y
+class Board:
+    # создание поля
+    def __init__(self, width, height):
+        self.width = width
+        self.height = height
+        self.board = []
+        for i in range(height):
+            self.board.append([])
+            for _ in range(width):
+                self.board[i].append(0)
+        # значения по умолчанию
+        self.left = 0
+        self.top = 0
+        self.cell_size = 30
+        self.o = [(4, 0), (5, 0), (4, 1), (5, 1)]
+        self.c_o = (5, 1, -1)
+        self.z = [(3, 0), (4, 0), (4, 1), (5, 1)]
+        self.c_z = (4, 1)
+        self.s = [(3, 1), (4, 1), (4, 0), (5, 0)]
+        self.c_s = (4, 1)
+        self.t = [(3, 0), (4, 0), (5, 0), (4, 1)]
+        self.c_t = (4, 1)
+        self.bl = [(3, 0), (4, 0), (5, 0), (3, 1)]
+        self.c_bl = (4, 1)
+        self.sl = [(3, 0), (4, 0), (5, 0), (6, 0)]
+        self.c_sl = (5, 0)
+        self.j = [(3, 0), (4, 0), (5, 0), (5, 1)]
+        self.c_j = (5, 1)
+        self.shapes = [self.o, self.z, self.s, self.t, self.bl, self.sl, self.j]
+        self.cs = [self.c_o, self.c_z, self.c_s, self.c_t, self.c_bl, self.c_sl, self.c_j]
 
-    def left(self):
-        x, y = self.get_cordinates()
-        try:
-            if not map_list[y][x - 1]:
-                self.x -= 1
-                self.rect = self.image.get_rect().move(
-                    tile_width * self.x + 15, tile_height * self.y + 5)
-                self.x = x - 1
-                all_sprites.draw(screen)
-                all_sprites.update()
+    def set_view(self, left, top, cell_size):
+        self.left = left
+        self.top = top
+        self.cell_size = cell_size
+
+    def get_shape(self):
+        self.shape_i = 1 #random.choice(range(6))
+        self.shape = self.shapes[self.shape_i]
+        self.c_shape = list(self.cs[self.shape_i])
+        for i, elem in enumerate(self.shape):
+            self.shape[i] = list(elem)
+        self.color = get_color()
+        for i in self.shape:
+            x = int(i[0])
+            y = int(i[1])
+            self.board[y][x] = self.color
+
+    def render(self, screen):
+        for y in range(self.height):
+            for x in range(self.width):
+                if not self.board[y][x]:
+                    pygame.draw.rect(screen, pygame.Color(255, 255, 255), (
+                    x * self.cell_size + self.left, y * self.cell_size + self.top, self.cell_size,
+                    self.cell_size), 1)
+                else:
+                    pygame.draw.rect(screen, pygame.Color(self.board[y][x]), (
+                    x * self.cell_size + self.left + 1, y * self.cell_size + self.top + 1, self.cell_size - 2,
+                    self.cell_size - 2))
+                    pygame.draw.rect(screen, pygame.Color(255, 255, 255), (
+                    x * self.cell_size + self.left, y * self.cell_size + self.top, self.cell_size,
+                    self.cell_size), 1)
+
+    def on_click(self, cell):
+        print(cell)
+
+    def get_click(self, mouse_pos):
+        cell = self.get_cell(mouse_pos)
+        return cell
+
+    def get_cell(self, mouse_pos):
+        cell_x = (mouse_pos[0] - self.left) // self.cell_size
+        cell_y = (mouse_pos[1] - self.top) // self.cell_size
+        if cell_x < 0 or cell_x >= self.width or cell_y < 0 or cell_y >= self.height:
+            return None
+        else:
+            return cell_x, cell_y
+
+    def moving_shape_left(self):
+        self.old_shape = self.shape.copy()
+        for i in range(len(self.shape)):
+            x = self.shape[i][0]
+            y = self.shape[i][1]
+            self.board[y][x] = 0
+        for i in range(len(self.shape)):
+            if self.shape[i][0] - 1 >= 0:
+                self.shape[i] = [self.shape[i][0] - 1, self.shape[i][1]]
+                self.c_shape
             else:
+                self.shape = self.old_shape.copy()
+                self.old_shape = None
+                for i in range(len(self.shape)):
+                    x = self.shape[i][0]
+                    y = self.shape[i][1]
+                    self.board[y][x] = self.color
                 return
-        except IndexError:
-            return
+        for i in range(len(self.shape)):
+            x = self.shape[i][0]
+            y = self.shape[i][1]
+            self.board[y][x] = self.color
 
-    def right(self):
-        x, y = self.get_cordinates()
-        try:
-            if not map_list[y][x + 1]:
-                self.x += 1
-                self.rect = self.image.get_rect().move(
-                    tile_width * self.x + 15, tile_height * self.y + 5)
-                all_sprites.draw(screen)
-                all_sprites.update()
+    def moving_shape_right(self):
+        self.old_shape = self.shape.copy()
+        for i in range(len(self.shape)):
+            x = self.shape[i][0]
+            y = self.shape[i][1]
+            self.board[y][x] = 0
+        for i in range(len(self.shape)):
+            if self.shape[i][0] + 1 < 10:
+                self.shape[i] = [self.shape[i][0] + 1, self.shape[i][1]]
             else:
+                self.shape = self.old_shape.copy()
+                self.old_shape = None
+                for i in range(len(self.shape)):
+                    x = self.shape[i][0]
+                    y = self.shape[i][1]
+                    self.board[y][x] = self.color
                 return
-        except IndexError:
-            return
+        for i in range(len(self.shape)):
+            x = self.shape[i][0]
+            y = self.shape[i][1]
+            self.board[y][x] = self.color
 
-    def up(self):
-        x, y = self.get_cordinates()
-        try:
-            if not map_list[y - 1][x]:
-                self.y -= 1
-                self.rect = self.image.get_rect().move(
-                    tile_width * self.x + 15, tile_height * self.y + 5)
-                all_sprites.draw(screen)
-                all_sprites.update()
-            else:
-                return
-        except IndexError:
-            return
-
-    def down(self):
-        x, y = self.get_cordinates()
-        try:
-            if not map_list[y + 1][x]:
-                self.y += 1
-                self.rect = self.image.get_rect().move(
-                    tile_width * self.x + 15, tile_height * self.y + 5)
-                all_sprites.draw(screen)
-                all_sprites.update()
-            else:
-                return
-        except IndexError:
-            return
-
-
-def load_level(filename):
-    filename = "data/" + filename
-    fullname = os.path.join('data', name)
-    if not os.path.isfile(fullname):
-        print(f"Файл с картой '{fullname}' не найден")
-        sys.exit()
-        pygame.quit()
-        return
-    with open(filename, 'r') as mapFile:
-        level_map = [line.strip() for line in mapFile]
-
-    # и подсчитываем максимальную длину
-    max_width = max(map(len, level_map))
-
-    # дополняем каждую строку пустыми клетками ('.')
-
-    return list(map(lambda x: x.ljust(max_width, '.'), level_map))
-
-
-def load_image(name, colorkey=None):
-    fullname = os.path.join('data', name)
-    # если файл не существует, то выходим
-    if not os.path.isfile(fullname):
-        print(f"Файл с изображением '{fullname}' не найден")
-        sys.exit()
-    image = pygame.image.load(fullname)
-    return image
-
-
-all_sprites = pygame.sprite.Group()
-tiles_group = pygame.sprite.Group()
-player_group = pygame.sprite.Group()
-map_list = []
-new_player = None
-
-
-def generate_level(level):
-    global new_player
-    new_player, x, y = None, None, None
-    for y in range(len(level)):
-        map_list.append([])
-        for x in range(len(level[y])):
-            if level[y][x] == '.':
-                Tile('empty', x, y)
-                map_list[y].append(0)
-            elif level[y][x] == '#':
-                Tile('wall', x, y)
-                map_list[y].append(1)
-            elif level[y][x] == '@':
-                a = x
-                b = y
-                Tile('empty', x, y)
-                map_list[y].append(0)
-    else:
-        new_player = Player(a, b)
-    return new_player, x, y
-
-
-FPS = 50
-tile_images = {
-    'wall': load_image('box.png'),
-    'empty': load_image('grass.png')
-}
-player_image = load_image('mario.png')
-
-tile_width = tile_height = 50
-
-
-def terminate():
-    pygame.quit()
-    sys.exit()
-
-def start_screen():
-    intro_text = ["ЗАСТАВКА", "",
-                  "Правила игры",
-                  "Перемещения персонажа"]
-
-    fon = pygame.transform.scale(load_image('fon.jpg'), (WIDTH, HEIGHT))
-    screen.blit(fon, (0, 0))
-    font = pygame.font.Font(None, 30)
-    text_coord = 50
-    for line in intro_text:
-        string_rendered = font.render(line, 1, pygame.Color('white'))
-        intro_rect = string_rendered.get_rect()
-        text_coord += 10
-        intro_rect.top = text_coord
-        intro_rect.x = 10
-        text_coord += intro_rect.height
-        screen.blit(string_rendered, intro_rect)
-
-    while True:
-        for event in pygame.event.get():
-            if event.type == pygame.QUIT:
-                terminate()
-            elif event.type == pygame.KEYDOWN or \
-                    event.type == pygame.MOUSEBUTTONDOWN:
-                return  # начинаем игру
-        pygame.display.flip()
-        clock.tick(FPS)
-
-
-
+    def turning_shape(self):
+        self.old_shape = self.shape.copy()
+        for i in range(len(self.shape)):
+            x = self.shape[i][0]
+            y = self.shape[i][1]
+            self.board[y][x] = 0
+        for i in range(len(self.shape)):
+            self.shape[i] = [-(self.shape[i][1] - self.c_shape[1]) + self.c_shape[0], self.shape[i][0] - self.c_shape[0] + self.c_shape[1]]
+        for i in range(len(self.shape)):
+            x = self.shape[i][0]
+            y = self.shape[i][1]
+            self.board[y][x] = self.color
 
 if __name__ == '__main__':
     pygame.init()
-    pygame.display.set_caption('Перемещение героя')
+    pygame.display.set_caption('Тетрис 1.1')
+    board = Board(10, 20)
+    board.set_view(0, 0, 30)
 
-    size = WIDTH, HEIGHT = 500, 500
+    size = width, height = 300, 600
     screen = pygame.display.set_mode(size)
 
     running = True
-    clock = pygame.time.Clock()
 
-    start_screen()
-    player, level_x, level_y = generate_level(load_level(input()))
+    board.get_shape()
+
     while running:
         for event in pygame.event.get():
-            keys = pygame.key.get_pressed()
             if event.type == pygame.QUIT:
                 running = False
-            if keys[pygame.K_RIGHT]:
-                new_player.right()
-            if keys[pygame.K_LEFT]:
-                new_player.left()
-            if keys[pygame.K_UP]:
-                new_player.up()
-            if keys[pygame.K_DOWN]:
-                new_player.down()
+            if event.type == pygame.KEYUP:
+                if event.key == pygame.K_LEFT:
+                    board.moving_shape_left()
+                if event.key == pygame.K_RIGHT:
+                    board.moving_shape_right()
+                if event.key == pygame.K_UP:
+                    print(0)
+                    board.turning_shape()
+        screen.fill((0, 0, 0))
+        board.render(screen)
         pygame.display.flip()
     pygame.quit()
