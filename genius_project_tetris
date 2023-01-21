@@ -42,7 +42,7 @@ class Board:
 
     def get_shape(self):
         self.shape_i = 3#random.choice(range(6))
-        self.shape = self.shapes[self.shape_i]
+        self.shape = list(self.shapes[self.shape_i])
         if self.shape_i:
             self.c_shape = list(self.cs[self.shape_i])
         else:
@@ -92,6 +92,12 @@ class Board:
         for i in range(len(self.shape)):
             x = self.shape[i][0]
             y = self.shape[i][1]
+            color = self.board[y][x]
+            if x + 1 < 0 or self.board[y][x - 1] != color and self.board[y][x - 1] != 0:
+                return
+        for i in range(len(self.shape)):
+            x = self.shape[i][0]
+            y = self.shape[i][1]
             self.board[y][x] = 0
         for i in range(len(self.shape)):
             if self.shape[i][0] - 1 >= 0:
@@ -111,6 +117,12 @@ class Board:
         self.old_shape = self.shape.copy()
         self.oldc_shape = self.c_shape.copy()
         self.c_shape = [self.c_shape[0] + 1, self.c_shape[1]]
+        for i in range(len(self.shape)):
+            x = self.shape[i][0]
+            y = self.shape[i][1]
+            color = self.board[y][x]
+            if x + 1 < 10 and self.board[y][x + 1] != color and self.board[y][x + 1] != 0:
+                return
         for i in range(len(self.shape)):
             x = self.shape[i][0]
             y = self.shape[i][1]
@@ -172,6 +184,13 @@ class Board:
         for i in range(len(self.shape)):
             x = self.shape[i][0]
             y = self.shape[i][1]
+            color = self.board[y][x]
+            if y + 1 < 20 and self.board[y + 1][x] != color and self.board[y + 1][x] != 0:
+                self.get_shape()
+                return
+        for i in range(len(self.shape)):
+            x = self.shape[i][0]
+            y = self.shape[i][1]
             self.board[y][x] = 0
         for i in range(len(self.shape)):
             if self.shape[i][1] + 1 < 20:
@@ -184,6 +203,8 @@ class Board:
                     x = self.shape[i][0]
                     y = self.shape[i][1]
                     self.board[y][x] = self.color
+                    self.draw_shapes()
+                    self.get_shape()
                 return
         self.draw_shapes()
 
