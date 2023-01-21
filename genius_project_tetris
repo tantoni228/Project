@@ -4,8 +4,6 @@ import random
 def get_color():
     return random.randrange(0, 255), random.randrange(0, 255), random.randrange(0, 255)
 
-
-
 class Board:
     # создание поля
     def __init__(self, width, height):
@@ -27,7 +25,7 @@ class Board:
         self.s = [(3, 1), (4, 1), (4, 0), (5, 0)]
         self.c_s = (4, 1)
         self.t = [(3, 0), (4, 0), (5, 0), (4, 1)]
-        self.c_t = (4, 1)
+        self.c_t = (4, 0)
         self.bl = [(3, 0), (4, 0), (5, 0), (3, 1)]
         self.c_bl = (4, 1)
         self.sl = [(3, 0), (4, 0), (5, 0), (6, 0)]
@@ -43,7 +41,7 @@ class Board:
         self.cell_size = cell_size
 
     def get_shape(self):
-        self.shape_i = random.choice(range(6))
+        self.shape_i = 3#random.choice(range(6))
         self.shape = self.shapes[self.shape_i]
         if self.shape_i:
             self.c_shape = list(self.cs[self.shape_i])
@@ -89,6 +87,8 @@ class Board:
 
     def moving_shape_left(self):
         self.old_shape = self.shape.copy()
+        self.oldc_shape = self.c_shape.copy()
+        self.c_shape = [self.c_shape[0] - 1, self.c_shape[1]]
         for i in range(len(self.shape)):
             x = self.shape[i][0]
             y = self.shape[i][1]
@@ -96,22 +96,21 @@ class Board:
         for i in range(len(self.shape)):
             if self.shape[i][0] - 1 >= 0:
                 self.shape[i] = [self.shape[i][0] - 1, self.shape[i][1]]
-                self.c_shape
             else:
-                self.shape = self.old_shape.copy()
+                self.shape = self.old_shape
+                self.c_shape = self.oldc_shape
                 self.old_shape = None
                 for i in range(len(self.shape)):
                     x = self.shape[i][0]
                     y = self.shape[i][1]
                     self.board[y][x] = self.color
                 return
-        for i in range(len(self.shape)):
-            x = self.shape[i][0]
-            y = self.shape[i][1]
-            self.board[y][x] = self.color
+        self.draw_shapes()
 
     def moving_shape_right(self):
         self.old_shape = self.shape.copy()
+        self.oldc_shape = self.c_shape.copy()
+        self.c_shape = [self.c_shape[0] + 1, self.c_shape[1]]
         for i in range(len(self.shape)):
             x = self.shape[i][0]
             y = self.shape[i][1]
@@ -120,19 +119,18 @@ class Board:
             if self.shape[i][0] + 1 < 10:
                 self.shape[i] = [self.shape[i][0] + 1, self.shape[i][1]]
             else:
-                self.shape = self.old_shape.copy()
+                self.shape = self.old_shape
+                self.c_shape = self.oldc_shape
                 self.old_shape = None
                 for i in range(len(self.shape)):
                     x = self.shape[i][0]
                     y = self.shape[i][1]
                     self.board[y][x] = self.color
                 return
-        for i in range(len(self.shape)):
-            x = self.shape[i][0]
-            y = self.shape[i][1]
-            self.board[y][x] = self.color
+        self.draw_shapes()
 
     def turning_shape(self):
+        self.old_shape = self.shape.copy()
         if self.c_shape:
             self.old_shape = self.shape.copy()
             for i in range(len(self.shape)):
@@ -140,11 +138,55 @@ class Board:
                 y = self.shape[i][1]
                 self.board[y][x] = 0
             for i in range(len(self.shape)):
-                self.shape[i] = [-(self.shape[i][1] - self.c_shape[1]) + self.c_shape[0], self.shape[i][0] - self.c_shape[0] + self.c_shape[1]]
-            for i in range(len(self.shape)):
-                x = self.shape[i][0]
-                y = self.shape[i][1]
-                self.board[y][x] = self.color
+                x, y = [-(self.shape[i][1] - self.c_shape[1]) + self.c_shape[0], self.shape[i][0] - self.c_shape[0] + self.c_shape[1]]
+                if x < 0 or y < 0:
+                    self.shape = self.old_shape
+                    self.old_shape = None
+                    for i in range(len(self.shape)):
+                        x = self.shape[i][0]
+                        y = self.shape[i][1]
+                        self.board[y][x] = self.color
+                    return
+                elif x + 1 > 10 or y + 1 > 20:
+                    self.shape = self.old_shape
+                    self.old_shape = None
+                    for i in range(len(self.shape)):
+                        x = self.shape[i][0]
+                        y = self.shape[i][1]
+                        self.board[y][x] = self.color
+                    return
+                else:
+                    self.shape[i] = [x, y]
+            self.draw_shapes()
+    
+    def draw_shapes(self):
+        for i in range(len(self.shape)):
+            x = self.shape[i][0]
+            y = self.shape[i][1]
+            self.board[y][x] = self.color
+    
+    def drop_shape(self):
+        self.old_shape = self.shape.copy()
+        self.oldc_shape = self.c_shape.copy()
+        self.c_shape = [self.c_shape[0], self.c_shape[1] + 1]
+        for i in range(len(self.shape)):
+            x = self.shape[i][0]
+            y = self.shape[i][1]
+            self.board[y][x] = 0
+        for i in range(len(self.shape)):
+            if self.shape[i][1] + 1 < 20:
+                self.shape[i] = [self.shape[i][0], self.shape[i][1] + 1]
+            else:
+                self.shape = self.old_shape
+                self.c_shape = self.oldc_shape
+                self.old_shape = None
+                for i in range(len(self.shape)):
+                    x = self.shape[i][0]
+                    y = self.shape[i][1]
+                    self.board[y][x] = self.color
+                return
+        self.draw_shapes()
+
 
 if __name__ == '__main__':
     pygame.init()
@@ -154,22 +196,25 @@ if __name__ == '__main__':
 
     size = width, height = 300, 600
     screen = pygame.display.set_mode(size)
+    MYEVENTTYPE = pygame.USEREVENT + 1
 
     running = True
 
     board.get_shape()
-
+    
+    pygame.time.set_timer(MYEVENTTYPE, 250)
     while running:
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 running = False
+            if event.type == MYEVENTTYPE:
+                    board.drop_shape()
             if event.type == pygame.KEYUP:
                 if event.key == pygame.K_LEFT:
                     board.moving_shape_left()
                 if event.key == pygame.K_RIGHT:
                     board.moving_shape_right()
                 if event.key == pygame.K_UP:
-                    print(0)
                     board.turning_shape()
         screen.fill((0, 0, 0))
         board.render(screen)
