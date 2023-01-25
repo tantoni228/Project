@@ -1,8 +1,46 @@
 import pygame
 import random
+import os
+import sys
 
 def get_color():
     return random.randrange(0, 255), random.randrange(0, 255), random.randrange(0, 255)
+
+def start_screen():
+    intro_text = ["                  Tetris"]
+
+    fon = pygame.transform.scale(load_image('fon.jpg'), (360, 660))
+    screen.blit(fon, (0, 0))
+    font = pygame.font.Font(None, 30)
+    text_coord = 30
+    for line in intro_text:
+        string_rendered = font.render(line, 1, pygame.Color('white'))
+        intro_rect = string_rendered.get_rect()
+        text_coord += 10
+        intro_rect.top = text_coord
+        intro_rect.x = 10
+        text_coord += intro_rect.height
+        screen.blit(string_rendered, intro_rect)
+
+    while True:
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                terminate()
+            elif event.type == pygame.KEYDOWN or \
+                    event.type == pygame.MOUSEBUTTONDOWN:
+                return  # начинаем игру
+        pygame.display.flip()
+        clock.tick(FPS)
+    
+def load_image(name, colorkey=None):
+    fullname = os.path.join('data', name)
+    # если файл не существует, то выходим
+    if not os.path.isfile(fullname):
+        print(f"Файл с изображением '{fullname}' не найден")
+        sys.exit()
+    image = pygame.image.load(fullname)
+    return image
+
 
 class Board:
     # создание поля
@@ -15,6 +53,7 @@ class Board:
             for _ in range(width):
                 self.board[i].append(0)
         # значения по умолчанию
+        self.run = False
         self.left = 0
         self.top = 0
         self.cell_size = 30
@@ -53,6 +92,8 @@ class Board:
         for i in self.shape:
             x = int(i[0])
             y = int(i[1])
+            if self.board[y][x]:
+                self.run = True
             self.board[y][x] = self.color
 
     def render(self, screen):
@@ -121,7 +162,7 @@ class Board:
         for i in range(len(self.shape)):
             x = self.shape[i][0]
             y = self.shape[i][1]
-            if x + 1 > 10 or self.board[y][x + 1] != self.color and self.board[y][x + 1] != 0:
+            if x + 2 > 10 or self.board[y][x + 1] != self.color and self.board[y][x + 1] != 0:
                 return
         for i in range(len(self.shape)):
             x = self.shape[i][0]
@@ -205,31 +246,43 @@ class Board:
 if __name__ == '__main__':
     pygame.init()
     pygame.display.set_caption('Тетрис 1.1')
-    board = Board(10, 20)
+    board = Board(12, 22)
     board.set_view(0, 0, 30)
 
     size = width, height = 300, 600
     screen = pygame.display.set_mode(size)
     MYEVENTTYPE = pygame.USEREVENT + 1
-
+    print(0)
+    image = pygame.transform.scale(load_image('gameover.png'), (360, 660))
+    print(image)
+    pos = [-600, 0]
+    v = 200
     running = True
-
+    FPS = 50
+    clock = pygame.time.Clock()
     board.get_shape()
-
-    pygame.time.set_timer(MYEVENTTYPE, 250)
+    run = False
+    pygame.time.set_timer(MYEVENTTYPE, 100)
+    start_screen()
     while running:
         for event in pygame.event.get():
-            if event.type == pygame.QUIT:
+            if event.type == pygame.QUIT and not board.run:
                 running = False
-            if event.type == MYEVENTTYPE:
+            if event.type == MYEVENTTYPE and not board.run:
                 board.drop_shape()
-            if event.type == pygame.KEYUP:
-                if event.key == pygame.K_LEFT:
+            if pos[0] >= -3:
+                board.run = False
+            if run:
+                print(1)
+                pos[0] += v * clock.tick() / 1000
+            if event.type == pygame.KEYUP and not board.run:
+                if event.key == pygame.K_LEFT  and not board.run:
                     board.moving_shape_left()
-                if event.key == pygame.K_RIGHT:
+                if event.key == pygame.K_RIGHT and not board.run:
                     board.moving_shape_right()
-                if event.key == pygame.K_UP:
+                if event.key == pygame.K_UP and not board.run:
                     board.turning_shape()
+        screen.blit(image, (pos))
         screen.fill((0, 0, 0))
         board.render(screen)
         pygame.display.flip()
