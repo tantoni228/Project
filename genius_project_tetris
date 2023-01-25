@@ -7,20 +7,10 @@ def get_color():
     return random.randrange(0, 255), random.randrange(0, 255), random.randrange(0, 255)
 
 def start_screen():
-    intro_text = ["                  Tetris"]
-
-    fon = pygame.transform.scale(load_image('fon.jpg'), (360, 660))
+    fon = pygame.transform.scale(load_image('fon.jpg'), (300, 600))
     screen.blit(fon, (0, 0))
     font = pygame.font.Font(None, 30)
     text_coord = 30
-    for line in intro_text:
-        string_rendered = font.render(line, 1, pygame.Color('white'))
-        intro_rect = string_rendered.get_rect()
-        text_coord += 10
-        intro_rect.top = text_coord
-        intro_rect.x = 10
-        text_coord += intro_rect.height
-        screen.blit(string_rendered, intro_rect)
 
     while True:
         for event in pygame.event.get():
@@ -243,47 +233,50 @@ class Board:
         self.draw_shapes()
 
 
+
 if __name__ == '__main__':
     pygame.init()
     pygame.display.set_caption('Тетрис 1.1')
-    board = Board(12, 22)
+    board = Board(10, 20)
     board.set_view(0, 0, 30)
 
     size = width, height = 300, 600
     screen = pygame.display.set_mode(size)
     MYEVENTTYPE = pygame.USEREVENT + 1
-    print(0)
-    image = pygame.transform.scale(load_image('gameover.png'), (360, 660))
-    print(image)
-    pos = [-600, 0]
-    v = 200
+
+    image = pygame.transform.scale(load_image('gameover.png'), (300, 600))
+
+    pos = [-780, 0]
+    v = 50
     running = True
     FPS = 50
     clock = pygame.time.Clock()
     board.get_shape()
-    run = False
     pygame.time.set_timer(MYEVENTTYPE, 100)
     start_screen()
+    a = 0
     while running:
         for event in pygame.event.get():
-            if event.type == pygame.QUIT and not board.run:
+            if board.run or a:
+                if pos[0] >= -3:
+                    a = 1
+                    board.run = False
+                if not a:
+                    pos[0] += v * clock.tick() / 1000
+            elif event.type == pygame.QUIT:
                 running = False
-            if event.type == MYEVENTTYPE and not board.run:
+            elif event.type == MYEVENTTYPE:
                 board.drop_shape()
-            if pos[0] >= -3:
-                board.run = False
-            if run:
-                print(1)
-                pos[0] += v * clock.tick() / 1000
-            if event.type == pygame.KEYUP and not board.run:
-                if event.key == pygame.K_LEFT  and not board.run:
+            elif event.type == pygame.KEYUP:
+                if event.key == pygame.K_LEFT:
                     board.moving_shape_left()
-                if event.key == pygame.K_RIGHT and not board.run:
+                if event.key == pygame.K_RIGHT:
                     board.moving_shape_right()
-                if event.key == pygame.K_UP and not board.run:
+                if event.key == pygame.K_UP:
                     board.turning_shape()
-        screen.blit(image, (pos))
         screen.fill((0, 0, 0))
         board.render(screen)
+        if board.run or a:
+            screen.blit(image, (pos))
         pygame.display.flip()
     pygame.quit()
