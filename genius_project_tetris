@@ -7,7 +7,7 @@ def get_color():
     return random.randrange(0, 255), random.randrange(0, 255), random.randrange(0, 255)
 
 def start_screen():
-    fon = pygame.transform.scale(load_image('fon.jpg'), (300, 600))
+    fon = pygame.transform.scale(load_image('fon.jpg'), (500, 620))
     screen.blit(fon, (0, 0))
     font = pygame.font.Font(None, 30)
     text_coord = 30
@@ -44,6 +44,7 @@ class Board:
                 self.board[i].append(0)
         # значения по умолчанию
         self.run = False
+        self.score = 0
         self.left = 0
         self.top = 0
         self.cell_size = 30
@@ -84,6 +85,10 @@ class Board:
             y = int(i[1])
             if self.board[y][x]:
                 self.run = True
+                return
+        for i in self.shape:
+            x = int(i[0])
+            y = int(i[1])
             self.board[y][x] = self.color
 
     def render(self, screen):
@@ -215,9 +220,11 @@ class Board:
             x = self.shape[i][0]
             y = self.shape[i][1]
             if y + 1 == 20:
+                self.delete_line()
                 self.get_shape()
                 return
             if self.board[y + 1][x] != self.color and self.board[y + 1][x] != 0:
+                self.delete_line()
                 self.get_shape()
                 return
         for i in range(len(self.shape)):
@@ -231,6 +238,34 @@ class Board:
                 self.from_error()
                 return
         self.draw_shapes()
+    
+    def delete_line(self):
+        self.y = []
+        for i in range(len(self.shape)):
+            if self.shape[i][1] not in self.y:
+                self.y.append(self.shape[i][1])
+        a = 0
+        for y in self.y:
+            cell = 0
+            for x in self.board[y]:
+                if x:
+                    cell += 1
+            else:
+                if cell == 10:
+                    a += 1
+                    del self.board[y]
+                    self.board.insert(0, [0, 0, 0, 0, 0, 0, 0, 0, 0, 0])
+                    print(len(self.board))
+        if a == 1:
+            self.score += 100
+        elif a == 2:
+            self.score += 300
+        elif a == 3:
+            self.score += 700
+        elif a == 4:
+            self.score += 1500
+        self.text_score = font2.render(str(board.score), True, (255, 255, 255))
+
 
 
 
@@ -238,27 +273,33 @@ if __name__ == '__main__':
     pygame.init()
     pygame.display.set_caption('Тетрис 1.1')
     board = Board(10, 20)
-    board.set_view(0, 0, 30)
+    board.set_view(10, 10, 30)
 
-    size = width, height = 300, 600
+    size = width, height = 500, 620
     screen = pygame.display.set_mode(size)
     MYEVENTTYPE = pygame.USEREVENT + 1
 
-    image = pygame.transform.scale(load_image('gameover.png'), (300, 600))
-
+    image = pygame.transform.scale(load_image('gameover.png'), (500, 620))
+    image2 = pygame.transform.scale(load_image('fon2.jpg'), (300, 600))
     pos = [-780, 0]
     v = 50
     running = True
     FPS = 50
     clock = pygame.time.Clock()
     board.get_shape()
-    pygame.time.set_timer(MYEVENTTYPE, 100)
+    pygame.time.set_timer(MYEVENTTYPE, 250)
     start_screen()
+    font = pygame.font.SysFont('timesnewroman', 38)
+    font2 = pygame.font.SysFont('arial', 38)
+    text1 = font.render("PYTHON", True, (100, 255, 100))
+    text2 = font.render("PYGAME", True, (100, 255, 100))
+    text3 = font.render("SCORE:", True, (100, 255, 100))
+    board.text_score = font2.render(str(board.score), True, (255, 255, 255))
     a = 0
     while running:
         for event in pygame.event.get():
             if board.run or a:
-                if pos[0] >= -3:
+                if pos[0] >= 0:
                     a = 1
                     board.run = False
                 if not a:
@@ -274,7 +315,12 @@ if __name__ == '__main__':
                     board.moving_shape_right()
                 if event.key == pygame.K_UP:
                     board.turning_shape()
-        screen.fill((0, 0, 0))
+        screen.fill((0, 33, 55))
+        screen.blit(image2, (10, 10))
+        screen.blit(text1, (325, 10))
+        screen.blit(text2, (325, 50))
+        screen.blit(text3, (325, 130))
+        screen.blit(board.text_score, (325, 170))
         board.render(screen)
         if board.run or a:
             screen.blit(image, (pos))
