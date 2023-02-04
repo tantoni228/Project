@@ -12,6 +12,7 @@ def get_color():
     return random.randrange(0, 255), random.randrange(0, 255), random.randrange(0, 255)
 
 def start_screen():
+    global running
     fon = pygame.transform.scale(load_image('fon.jpg'), (500, 620))
     screen.blit(fon, (0, 0))
     font = pygame.font.Font(None, 30)
@@ -20,10 +21,11 @@ def start_screen():
     while True:
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
-                terminate()
+                running = False
+                return
             elif event.type == pygame.KEYDOWN or \
                     event.type == pygame.MOUSEBUTTONDOWN:
-                return  # начинаем игру
+                        return
         pygame.display.flip()
 
 def load_image(name, colorkey=None):
@@ -41,15 +43,15 @@ class MainWindow(QMainWindow):
     def __init__(self):
         # You must call the super class method
         QMainWindow.__init__(self)
- 
-        self.setMinimumSize(QSize(480, 80))         # Set sizes 
+
+        self.setMinimumSize(QSize(300, 700))         # Set sizes
         self.setWindowTitle("RATING")    # Set the window title
         central_widget = QWidget(self)              # Create a central widget
         self.setCentralWidget(central_widget)       # Install the central widget
- 
+
         grid_layout = QGridLayout(self)         # Create QGridLayout
         central_widget.setLayout(grid_layout)   # Set this layout in central widget
- 
+
         table = QTableWidget(self)  # Create a table
         table.setColumnCount(3)     #Set three columns
         table.setHorizontalHeaderLabels(["NAME", "TIME", "SCORE"])
@@ -109,9 +111,6 @@ class Example(QWidget):
         self.btn.move(20, 80)
         self.btn.clicked.connect(self.run)
 
-        self.le = QLineEdit(self)
-        self.le.move(130, 22)
-
         self.setGeometry(300, 300, 290, 150)
         self.setWindowTitle('Input dialog')
         self.show()
@@ -119,11 +118,10 @@ class Example(QWidget):
 
     def showDialog(self):
         global name
-        text, ok = QInputDialog.getText(self, 'Input Dialog',
+        text, ok = QInputDialog.getText(self, 'NAME',
             'Enter your name:')
 
         if ok:
-            self.le.setText(str(text))
             name = text
 
     def closed(self):
@@ -175,7 +173,7 @@ class Board:
             print(1)
         else:
             f = open('files.txt', 'a')
-            f.write(f'{self.name}, {self.text_time}, {self.score}')
+            f.write(f'{self.name}, {self.text_time}, {self.score}\n')
         self.a = 1
         f.close()
 
@@ -223,6 +221,21 @@ class Board:
                     pygame.draw.rect(screen, pygame.Color(255, 255, 255), (
                     x * self.cell_size + self.left, y * self.cell_size + self.top, self.cell_size,
                     self.cell_size), 1)
+                    pygame.draw.rect(screen, pygame.Color(0, 0, 0), (
+                    x * self.cell_size + self.left + 1, y * self.cell_size + self.top + 1, self.cell_size - 2,
+                    self.cell_size - 2), 1)
+                    pygame.draw.rect(screen, pygame.Color(0, 0, 0), (
+                    x * self.cell_size + self.left + 5, y * self.cell_size + self.top + 5, self.cell_size - 10,
+                    self.cell_size - 10), 1)
+                    pygame.draw.line(screen, pygame.Color(0, 0, 0), (x * self.cell_size + self.left + 1, y * self.cell_size + self.top + 1),
+                    (x * self.cell_size + self.left + 5, y * self.cell_size + self.top + 5))
+                    pygame.draw.line(screen, pygame.Color(0, 0, 0), (x * self.cell_size + self.left + self.cell_size - 2, y * self.cell_size + self.top + self.cell_size - 2),
+                    (x * self.cell_size + self.left + self.cell_size - 5, y * self.cell_size + self.top + self.cell_size - 5))
+                    pygame.draw.line(screen, pygame.Color(0, 0, 0), (x * self.cell_size + self.left - 2 + self.cell_size, y * self.cell_size + self.top + 1),
+                    (x * self.cell_size + self.left + self.cell_size - 6, y * self.cell_size + self.top + 5))
+                    pygame.draw.line(screen, pygame.Color(0, 0, 0), (x * self.cell_size + self.left + 5, y * self.cell_size + self.top + self.cell_size - 6),
+                    (x * self.cell_size + self.left + 1, y * self.cell_size + self.top + self.cell_size - 2))
+
 
     def on_click(self, cell):
         print(cell)
@@ -340,11 +353,11 @@ class Board:
             if y + 1 == 20:
                 self.delete_line()
                 self.get_shape()
-                return
+                return 1
             if self.board[y + 1][x] != self.color and self.board[y + 1][x] != 0:
                 self.delete_line()
                 self.get_shape()
-                return
+                return 1
         for i in range(len(self.shape)):
             x = self.shape[i][0]
             y = self.shape[i][1]
@@ -382,7 +395,11 @@ class Board:
         elif a == 4:
             self.score += 1500
         self.text_score = font2.render(str(board.score), True, (255, 255, 255))
-
+    
+    def full_drop(self):
+        a = self.drop_shape()
+        while not a:
+            a = self.drop_shape()
 
 
 
@@ -413,14 +430,14 @@ if __name__ == '__main__':
     FPS = 30
     clock = pygame.time.Clock()
     board.get_shape()
-    pygame.time.set_timer(MYEVENTTYPE, 100)
+    TIME = 300
+    pygame.time.set_timer(MYEVENTTYPE, TIME)
+
+    start_screen()
 
     ticks = pygame.time.get_ticks()
     seconds = int(ticks / 1000 % 60)
     minutes = int(seconds % 60)
-
-
-    start_screen()
 
     font = pygame.font.SysFont('timesnewroman', 38)
     font2 = pygame.font.SysFont('arial', 38)
@@ -428,6 +445,7 @@ if __name__ == '__main__':
     text2 = font.render("PYGAME", True, (100, 255, 100))
     text3 = font.render("SCORE:", True, (100, 255, 100))
     board.text_score = font2.render(str(board.score), True, (255, 255, 255))
+
     while running:
         for event in pygame.event.get():
             if run:
@@ -441,6 +459,8 @@ if __name__ == '__main__':
                     board.moving_shape_right()
                 if event.key == pygame.K_UP:
                     board.turning_shape()
+                if event.key == pygame.K_RETURN:
+                    board.full_drop()
             if event.type == pygame.QUIT:
                 running = False
         if pos_x >= -3:
@@ -449,12 +469,13 @@ if __name__ == '__main__':
             pos_x += v / FPS
             clock.tick(FPS)
 
-        ticks = pygame.time.get_ticks()
-        seconds = int(ticks / 1000 % 60)
-        minutes = int(ticks / 60000 % 24)
-        hours = int(ticks / 3600000 % 24)
-        out = f'{hours}:{minutes}:{seconds}'
-        text_time = font2.render(out, True, (255, 255, 255))
+        if not run:
+            ticks = pygame.time.get_ticks()
+            seconds = int(ticks / 1000 % 60)
+            minutes = int(ticks / 60000 % 24)
+            hours = int(ticks / 3600000 % 24)
+            out = f'{hours}:{minutes}:{seconds}'
+            text_time = font2.render(out, True, (255, 255, 255))
 
         screen.fill((0, 33, 55))
         screen.blit(image2, (10, 10))
@@ -467,3 +488,4 @@ if __name__ == '__main__':
         screen.blit(image, (pos_x, 0))
         pygame.display.flip()
     pygame.quit()
+
